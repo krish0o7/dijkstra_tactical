@@ -1,495 +1,677 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>M Travels – Train & Flight Booking, Ranchi</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dijkstra · Route Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --navy: #08142E; --navy2: #0D1F45; --navy3: #112558;
-    --gold: #C9993A; --gold2: #E2B554;
-    --white: #FFFFFF; --muted: #A8B4CC; --border: rgba(201,153,58,0.25);
-  }
-  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { background:var(--navy); color:var(--white); font-family:'DM Sans',sans-serif; overflow-x:hidden; }
-  ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:var(--navy);} ::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070a0e;--bg2:#0c1018;--bg3:#111a24;
+  --a:#e8a020;--a2:rgba(232,160,32,.12);--ag:rgba(232,160,32,.4);
+  --cy:#28b8d8;--gn:#28d870;--rd:#e04040;
+  --tx:#b0a070;--tx2:#48566a;--txb:#e0d8c0;
+  --bd:rgba(232,160,32,.13);--bd2:rgba(232,160,32,.3);
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Rajdhani',sans-serif;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(232,160,32,.02) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(232,160,32,.02) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none;z-index:0}
+/* HUD corner brackets */
+.bk{position:fixed;width:38px;height:38px;border-color:rgba(232,160,32,.5);border-style:solid}
+.bk.tl{top:13px;left:13px;border-width:1.5px 0 0 1.5px}
+.bk.tr{top:13px;right:13px;border-width:1.5px 1.5px 0 0}
+.bk.bl{bottom:13px;left:13px;border-width:0 0 1.5px 1.5px}
+.bk.br{bottom:13px;right:13px;border-width:0 1.5px 1.5px 0}
+/* Extra tick marks on corners */
+.bk::after{content:'';position:absolute;background:rgba(232,160,32,.4)}
+.bk.tl::after{width:8px;height:1px;top:6px;left:-1px}
+.bk.tr::after{width:1px;height:8px;top:-1px;right:6px}
+.bk.bl::after{width:8px;height:1px;bottom:6px;left:-1px}
+.bk.br::after{width:1px;height:8px;bottom:-1px;right:6px}
 
-  nav { position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 5%; height:70px; background:rgba(8,20,46,0.93); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
-  .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
-  .logo-icon { width:38px; height:38px; background:linear-gradient(135deg,var(--gold),var(--gold2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:700; color:var(--navy); font-size:18px; }
-  .logo-text { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; }
-  .logo-text span { color:var(--gold2); }
-  .nav-links { display:flex; gap:2rem; list-style:none; }
-  .nav-links a { color:var(--muted); text-decoration:none; font-size:14px; font-weight:500; transition:color 0.2s; }
-  .nav-links a:hover { color:var(--gold2); }
-  .nav-cta { background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--navy); padding:9px 22px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; transition:opacity 0.2s; }
-  .nav-cta:hover { opacity:0.88; }
+.app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;padding:13px 20px 11px}
 
-  #home { min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:120px 5% 80px; position:relative; overflow:hidden; }
-  .hero-bg { position:absolute; inset:0; z-index:0; background:radial-gradient(ellipse 80% 60% at 70% 40%,rgba(17,37,88,0.8) 0%,transparent 70%),radial-gradient(ellipse 50% 50% at 10% 80%,rgba(201,153,58,0.08) 0%,transparent 60%),linear-gradient(160deg,#08142E 0%,#0D1F45 50%,#08142E 100%); }
-  .hero-grid { position:absolute; inset:0; z-index:0; background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size:60px 60px; opacity:0.3; }
-  .hero-content { position:relative; z-index:1; max-width:700px; }
-  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(201,153,58,0.12); border:1px solid var(--border); padding:6px 16px; border-radius:30px; margin-bottom:1.5rem; font-size:13px; color:var(--gold2); font-weight:500; letter-spacing:0.8px; }
-  .hero-badge::before { content:'✈'; font-size:14px; }
-  h1 { font-family:'Playfair Display',serif; font-size:clamp(2.4rem,5vw,4rem); font-weight:700; line-height:1.15; margin-bottom:1.2rem; }
-  h1 .gold { color:var(--gold2); }
-  .hero-sub { font-size:1.05rem; color:var(--muted); line-height:1.75; max-width:520px; margin-bottom:2.5rem; }
-  .hero-btns { display:flex; gap:1rem; flex-wrap:wrap; }
-  .btn-primary { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:var(--navy); padding:14px 30px; border-radius:8px; font-size:15px; font-weight:600; text-decoration:none; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:0.2s; }
-  .btn-primary:hover { opacity:0.88; transform:translateY(-1px); }
-  .btn-outline { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); color:var(--gold2); padding:14px 30px; border-radius:8px; font-size:15px; font-weight:500; text-decoration:none; background:transparent; cursor:pointer; font-family:'DM Sans',sans-serif; transition:0.2s; }
-  .btn-outline:hover { background:rgba(201,153,58,0.08); }
-  .hero-stats { position:relative; z-index:1; display:flex; gap:2.5rem; margin-top:4rem; flex-wrap:wrap; }
-  .stat { border-left:2px solid var(--gold); padding-left:1rem; }
-  .stat-num { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; color:var(--gold2); }
-  .stat-label { font-size:13px; color:var(--muted); margin-top:2px; }
-  .hero-float { position:absolute; right:5%; top:50%; transform:translateY(-50%); z-index:1; display:flex; flex-direction:column; gap:1rem; }
-  .float-card { background:rgba(13,31,69,0.85); border:1px solid var(--border); border-radius:12px; padding:1rem 1.25rem; min-width:220px; backdrop-filter:blur(8px); animation:floatY 4s ease-in-out infinite; }
-  .float-card:nth-child(2) { animation-delay:2s; }
-  @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-  .float-icon{font-size:20px;margin-bottom:6px;} .float-title{font-size:13px;font-weight:600;} .float-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;
+  padding:0 4px 9px;border-bottom:1px solid var(--bd);flex-shrink:0;gap:12px}
+.hl{flex-shrink:0}
+.hl .tag{font-family:'Space Mono',monospace;font-size:7.5px;letter-spacing:3px;
+  color:var(--tx2);margin-bottom:4px}
+h1{font-size:clamp(14px,2vw,20px);font-weight:700;letter-spacing:6px;color:var(--txb);line-height:1}
+h1 em{font-style:normal;color:var(--a)}
+.hr{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.cg{display:flex;flex-direction:column;gap:3px}
+.cl{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:2px;color:var(--tx2);text-transform:uppercase}
+select{background:var(--bg2);border:1px solid var(--bd2);border-radius:3px;
+  color:var(--a);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:1px;padding:6px 10px;cursor:pointer;outline:none;min-width:138px;transition:border-color .2s}
+select:focus{border-color:var(--a)}
+select option{background:#0c1018}
+.br-row{display:flex;gap:6px;align-items:center}
+button{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;
+  padding:7px 13px;border-radius:3px;cursor:pointer;background:transparent;
+  transition:all .15s;white-space:nowrap;border:1px solid;outline:none}
+.bc{border-color:var(--a);color:var(--a)}
+.bc:hover{background:var(--a2);box-shadow:0 0 16px var(--ag)}
+.bs{border-color:var(--tx2);color:var(--tx2)}
+.bs:hover{border-color:var(--cy);color:var(--cy)}
+.bx{border-color:rgba(224,64,64,.4);color:rgba(224,64,64,.7)}
+.bx:hover{border-color:var(--rd);color:var(--rd)}
+button:active{transform:scale(.97)}
+.sw{display:flex;flex-direction:column;gap:3px}
+.st{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:2px;
+  color:var(--tx2);display:flex;justify-content:space-between;min-width:90px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:90px;height:2px;
+  background:var(--bd2);border-radius:1px;outline:none;cursor:pointer;display:block;margin-top:4px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;
+  border-radius:50%;background:var(--a);cursor:pointer}
 
-  section { padding:90px 5%; }
-  .section-tag { display:inline-block; font-size:12px; font-weight:600; letter-spacing:2px; color:var(--gold); text-transform:uppercase; margin-bottom:0.75rem; }
-  .section-title { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,3.5vw,2.6rem); font-weight:700; margin-bottom:1rem; line-height:1.25; }
-  .section-title span { color:var(--gold2); }
-  .section-sub { color:var(--muted); font-size:1rem; line-height:1.75; max-width:560px; }
-  .divider { width:60px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:2px; margin:1.2rem 0; }
+/* ── MAIN ── */
+main{flex:1;display:grid;grid-template-columns:210px 1fr;gap:10px;padding-top:10px;min-height:0}
+.lp{display:flex;flex-direction:column;gap:8px;min-height:0}
+.pc{background:var(--bg2);border:1px solid var(--bd);border-radius:5px;padding:12px;position:relative}
+.pc::after{content:'';position:absolute;top:0;left:24px;right:24px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(232,160,32,.2),transparent)}
+.pt{font-family:'Space Mono',monospace;font-size:7.5px;letter-spacing:3px;color:var(--a);
+  opacity:.7;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase}
+.pt::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--a);flex-shrink:0;box-shadow:0 0 5px var(--a)}
+.dt{width:100%;border-collapse:collapse}
+.dt th{font-family:'Space Mono',monospace;font-size:7px;letter-spacing:1.5px;
+  color:var(--tx2);padding:0 3px 7px;text-align:left;border-bottom:1px solid var(--bd)}
+.dt td{padding:6px 3px;border-bottom:1px solid rgba(232,160,32,.04);
+  font-weight:600;font-size:13px;transition:color .3s,background .3s}
+.dt tr:last-child td{border-bottom:none}
+.cd{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;
+  vertical-align:middle;background:var(--tx2);transition:all .3s;flex-shrink:0}
+.rs .cd{background:var(--a);box-shadow:0 0 7px var(--a)}
+.rs td{color:var(--a)}
+.rc .cd{background:var(--a);box-shadow:0 0 9px var(--a)}
+.rc td{color:#fff;background:rgba(232,160,32,.06)}
+.rv .cd{background:var(--cy)}
+.rv td{color:var(--cy)}
+.rp .cd{background:var(--gn);box-shadow:0 0 7px var(--gn)}
+.rp td{color:var(--gn)}
+.rd2 .cd{background:var(--gn);box-shadow:0 0 7px var(--gn)}
+.rd2 td{color:var(--gn)}
+.ru td{color:var(--tx2)}
+.dtd{font-family:'Space Mono',monospace;font-size:10px}
+#stepLog{font-family:'Space Mono',monospace;font-size:8.5px;line-height:1.95;
+  color:var(--tx2);overflow:hidden}
+.sl{display:block;padding:1px 0 1px 8px;border-left:2px solid transparent}
+.sl.act{border-left-color:var(--a);color:var(--tx)}
+.kw{color:var(--cy)}.nm{color:var(--a);font-weight:700}.vl{color:var(--gn)}
 
-  #services { background:var(--navy2); }
-  .services-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin-top:3rem; }
-  .service-card { background:var(--navy); border:1px solid var(--border); border-radius:16px; padding:2rem; position:relative; overflow:hidden; transition:0.3s; }
-  .service-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold2)); }
-  .service-card:hover { transform:translateY(-4px); border-color:var(--gold); }
-  .service-icon { width:56px; height:56px; background:rgba(201,153,58,0.12); border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:1.25rem; }
-  .service-card h3 { font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; margin-bottom:0.75rem; }
-  .service-card p { color:var(--muted); font-size:0.92rem; line-height:1.75; }
-  .service-features { list-style:none; margin-top:1.25rem; display:flex; flex-direction:column; gap:6px; }
-  .service-features li { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:8px; }
-  .service-features li::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
-  .service-tag { position:absolute; top:1.25rem; right:1.25rem; background:rgba(201,153,58,0.15); color:var(--gold2); font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; }
+/* ── GRAPH ── */
+.gw{position:relative;border:1px solid var(--bd);border-radius:5px;overflow:hidden;
+  background:var(--bg2)}
+.gw::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 65% 55% at 50% 50%,rgba(232,160,32,.03) 0%,transparent 70%);
+  pointer-events:none;z-index:1}
+#gc{width:100%;height:100%;display:block;cursor:default}
+.pb{position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(232,160,32,.08);z-index:2}
+.pf{height:100%;width:0%;transition:width .25s;background:var(--a);box-shadow:0 0 8px var(--a)}
 
-  .why-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.5rem; margin-top:3rem; }
-  .why-card { display:flex; gap:1rem; padding:1.5rem; background:rgba(13,31,69,0.5); border:1px solid var(--border); border-radius:12px; transition:0.3s; }
-  .why-card:hover { border-color:var(--gold); background:rgba(13,31,69,0.8); }
-  .why-num { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:rgba(201,153,58,0.2); line-height:1; min-width:40px; }
-  .why-card h4 { font-size:15px; font-weight:600; margin-bottom:5px; }
-  .why-card p { font-size:13px; color:var(--muted); line-height:1.7; }
+/* tooltip */
+#tip{position:absolute;background:rgba(7,10,14,.96);border:1px solid var(--bd2);
+  border-radius:4px;padding:8px 11px;pointer-events:none;display:none;z-index:10;
+  font-family:'Space Mono',monospace;font-size:9px;line-height:1.7;color:var(--tx)}
+#tip .tc{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  color:var(--txb);letter-spacing:1px;margin-bottom:2px}
 
-  #routes { background:var(--navy2); }
-  .routes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; margin-top:2.5rem; }
-  .route-card { background:var(--navy); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; display:flex; align-items:center; gap:10px; transition:0.25s; }
-  .route-card:hover { border-color:var(--gold); background:rgba(201,153,58,0.05); }
-  .route-from{font-size:13px;font-weight:600;} .route-arrow{font-size:10px;color:var(--gold);margin:0 2px;} .route-to{font-size:13px;color:var(--muted);}
-  .routes-note { margin-top:1.5rem; text-align:center; color:var(--muted); font-size:14px; }
-  .routes-note span { color:var(--gold2); font-weight:500; }
-
-  .about-wrap { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
-  .about-card-main { background:var(--navy2); border:1px solid var(--border); border-radius:20px; padding:2.5rem; text-align:center; }
-  .owner-avatar { width:90px; height:90px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold2)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--navy); margin:0 auto 1rem; }
-  .owner-name{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;} .owner-role{font-size:13px;color:var(--gold2);margin-top:4px;}
-  .owner-quote { font-size:14px; color:var(--muted); line-height:1.8; margin-top:1rem; font-style:italic; border-top:1px solid var(--border); padding-top:1rem; }
-  .about-badge-row { display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; flex-wrap:wrap; }
-  .about-badge { background:rgba(201,153,58,0.1); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; color:var(--gold2); font-weight:500; }
-  .about-content p { color:var(--muted); line-height:1.85; margin-bottom:1rem; font-size:0.97rem; }
-
-  #testimonials { background:var(--navy2); }
-  .testi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin-top:3rem; }
-  .testi-card { background:var(--navy); border:1px solid var(--border); border-radius:14px; padding:1.75rem; position:relative; }
-  .testi-stars{color:var(--gold2);font-size:14px;margin-bottom:0.75rem;} .testi-text{color:var(--muted);font-size:14px;line-height:1.85;font-style:italic;}
-  .testi-author{display:flex;align-items:center;gap:10px;margin-top:1.25rem;} .testi-avatar{width:36px;height:36px;border-radius:50%;background:rgba(201,153,58,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--gold2);}
-  .testi-name{font-size:14px;font-weight:600;} .testi-city{font-size:12px;color:var(--muted);}
-  .quote-mark{position:absolute;top:1rem;right:1.5rem;font-family:'Playfair Display',serif;font-size:4rem;line-height:1;color:rgba(201,153,58,0.08);font-weight:700;}
-
-  #contact { background:var(--navy); }
-  .contact-cards { display:flex; flex-direction:column; gap:1rem; margin-top:3rem; max-width:600px; }
-  .contact-card { display:flex; align-items:flex-start; gap:1rem; background:var(--navy2); border:1px solid var(--border); border-radius:12px; padding:1.25rem; text-decoration:none; transition:0.25s; }
-  .contact-card:hover { border-color:var(--gold); }
-  .contact-icon { width:44px; height:44px; border-radius:10px; flex-shrink:0; background:rgba(201,153,58,0.12); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:20px; }
-  .contact-label{font-size:12px;color:var(--muted);margin-bottom:3px;} .contact-val{font-size:15px;font-weight:500;} .contact-val small{font-size:12px;color:var(--muted);font-weight:400;}
-
-  .cta-banner { background:linear-gradient(135deg,var(--navy3),var(--navy2)); border:1px solid var(--border); border-radius:20px; padding:3rem; text-align:center; margin:0 5% 4rem; position:relative; overflow:hidden; }
-  .cta-banner::before { content:''; position:absolute; top:-50%; left:50%; transform:translateX(-50%); width:300px; height:300px; border-radius:50%; background:radial-gradient(circle,rgba(201,153,58,0.1) 0%,transparent 70%); }
-  .cta-banner h2{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,3vw,2rem);margin-bottom:0.75rem;position:relative;} .cta-banner p{color:var(--muted);margin-bottom:1.75rem;position:relative;}
-  .cta-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative;}
-
-  footer { background:var(--navy2); border-top:1px solid var(--border); padding:2.5rem 5%; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
-  .footer-logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;} .footer-logo span{color:var(--gold2);} .footer-copy{font-size:13px;color:var(--muted);}
-  .footer-links{display:flex;gap:1.5rem;} .footer-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:0.2s;} .footer-links a:hover{color:var(--gold2);}
-
-  /* MODAL */
-  .modal-overlay{position:fixed;inset:0;z-index:999;background:rgba(4,10,26,0.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity 0.3s;}
-  .modal-overlay.open{opacity:1;pointer-events:all;}
-  .modal{background:var(--navy2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;transform:translateY(24px) scale(0.97);transition:transform 0.3s;}
-  .modal-overlay.open .modal{transform:translateY(0) scale(1);}
-  .modal-header{padding:1.5rem 1.75rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .modal-header-left{display:flex;align-items:center;gap:10px;}
-  .modal-logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--navy);font-size:16px;}
-  .modal-title{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;} .modal-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-  .modal-close{background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:16px;transition:0.2s;}
-  .modal-close:hover{color:var(--white);background:rgba(255,255,255,0.12);}
-  .modal-body{padding:1.5rem 1.75rem;}
-  .step-label{font-size:11px;font-weight:600;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-  .opt-tag{font-size:10px;background:rgba(201,153,58,0.1);color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px;font-weight:500;letter-spacing:0;text-transform:none;}
-  .type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
-  .type-btn{padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:0.2s;}
-  .type-btn.active{background:rgba(201,153,58,0.15);border-color:var(--gold);color:var(--gold2);}
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-  .form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;} .form-group.half{margin-bottom:0;}
-  label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;}
-  input,select,textarea{background:rgba(8,20,46,0.6);border:1px solid rgba(201,153,58,0.2);border-radius:8px;padding:10px 12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;width:100%;}
-  input::placeholder,textarea::placeholder{color:rgba(168,180,204,0.45);}
-  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
-  select option{background:var(--navy2);color:var(--white);}
-  textarea{resize:none;height:72px;}
-  .form-divider{height:1px;background:var(--border);margin:1rem 0;}
-  .pax-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:4px;}
-  .pax-box{display:flex;flex-direction:column;gap:5px;} .pax-box label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
-  .preview-box{background:rgba(8,20,46,0.6);border:1px solid rgba(201,153,58,0.2);border-radius:10px;padding:1rem;margin-bottom:1.25rem;font-size:12px;color:var(--muted);line-height:2.1;font-family:monospace;display:none;}
-  .preview-box.show{display:block;} .preview-box b{color:var(--gold2);}
-  .whatsapp-btn{width:100%;padding:14px;border-radius:10px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:0.2s;}
-  .whatsapp-btn:hover{opacity:0.9;transform:translateY(-1px);} .whatsapp-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
-  .modal-note{text-align:center;font-size:12px;color:var(--muted);margin-top:0.75rem;line-height:1.6;} .modal-note span{color:var(--gold2);}
-
-  @media(max-width:900px){.hero-float{display:none;}.about-wrap{grid-template-columns:1fr;}.nav-links{display:none;}}
-  @media(max-width:560px){.form-row{grid-template-columns:1fr;}section{padding:60px 4%;}.cta-banner{margin:0 4% 3rem;padding:2rem;}.modal-body{padding:1.25rem;}}
-  .fade-in{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease;} .fade-in.visible{opacity:1;transform:translateY(0);}
+/* ── FOOTER ── */
+footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:8px 4px 0;border-top:1px solid var(--bd);flex-wrap:wrap;gap:8px}
+.leg{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;
+  font-size:7.5px;letter-spacing:.5px;color:var(--tx2)}
+.ll{width:20px;height:2px;border-radius:1px}
+.ld{width:20px;border-top:2px dashed}
+.lb{width:11px;height:8px;border:1.5px solid;border-radius:2px}
+.sp{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:2px;padding:4px 11px;border-radius:20px}
+.sr{background:rgba(40,184,216,.08);border:1px solid rgba(40,184,216,.3);color:var(--cy)}
+.sn{background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.35);color:var(--a)}
+.sd{background:rgba(40,216,112,.08);border:1px solid rgba(40,216,112,.35);color:var(--gn)}
 </style>
 </head>
 <body>
+<div class="bk tl"></div><div class="bk tr"></div>
+<div class="bk bl"></div><div class="bk br"></div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="bookingModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-header-left">
-        <div class="modal-logo-icon">M</div>
-        <div><div class="modal-title">Book Your Journey</div><div class="modal-sub">Details sent to Madan ji on WhatsApp instantly</div></div>
-      </div>
-      <div class="modal-close" onclick="closeModal()">✕</div>
+<div class="app">
+  <header>
+    <div class="hl">
+      <p class="tag">GRAPH · ALGORITHM · CS PROJECT DEMO</p>
+      <h1>DIJKSTRA <em>·</em> ROUTE INTELLIGENCE</h1>
     </div>
-    <div class="modal-body">
-
-      <div class="step-label">Step 1 — Journey Type</div>
-      <div class="type-toggle">
-        <button class="type-btn active" id="btnTrain" onclick="setType('train')">🚆 Train</button>
-        <button class="type-btn" id="btnFlight" onclick="setType('flight')">✈️ Flight</button>
-      </div>
-      <div class="form-divider"></div>
-
-      <div class="step-label">Step 2 — Journey Route</div>
-      <div class="form-row">
-        <div class="form-group half"><label>From (City)</label><input type="text" id="f-from" placeholder="Ranchi" oninput="updatePreview()" /></div>
-        <div class="form-group half"><label>To (City)</label><input type="text" id="f-to" placeholder="Delhi" oninput="updatePreview()" /></div>
-      </div>
-      <div class="form-divider"></div>
-
-      <div class="step-label">Step 3 — Class Preference</div>
-      <div id="train-class">
-        <div class="form-group">
-          <label>Train Class</label>
-          <select id="f-class" onchange="updatePreview()">
-            <option value="">Select class</option>
-            <option>Sleeper (SL)</option><option>AC 3 Tier (3AC)</option><option>AC 2 Tier (2AC)</option>
-            <option>AC First Class (1AC)</option><option>General (GN)</option><option>Tatkal – Any Class</option>
-          </select>
-        </div>
-      </div>
-      <div id="flight-class" style="display:none">
-        <div class="form-row">
-          <div class="form-group half"><label>Trip Type</label><select id="f-trip" onchange="updatePreview()"><option value="">Select</option><option>One Way</option><option>Round Trip</option></select></div>
-          <div class="form-group half"><label>Cabin Class</label><select id="f-cabin" onchange="updatePreview()"><option value="">Select</option><option>Economy</option><option>Business</option><option>First Class</option></select></div>
-        </div>
-      </div>
-      <div class="form-divider"></div>
-
-      <div id="train-name-block">
-        <div class="step-label">Step 4 — Train Details <span class="opt-tag">Optional</span></div>
-        <div class="form-row">
-          <div class="form-group half"><label>Train Name</label><input type="text" id="f-trainname" placeholder="e.g. Rajdhani Express" oninput="updatePreview()" /></div>
-          <div class="form-group half"><label>Train Number</label><input type="text" id="f-trainno" placeholder="e.g. 12301" maxlength="6" oninput="updatePreview()" /></div>
-        </div>
-        <div class="form-divider"></div>
-      </div>
-
-      <div class="step-label" id="lbl-dates">Step 5 — Travel Dates</div>
-      <div class="form-row">
-        <div class="form-group half"><label>Travel Date</label><input type="date" id="f-date" oninput="updatePreview()" /></div>
-        <div class="form-group half"><label>Return Date <span class="opt-tag">Optional</span></label><input type="date" id="f-return" oninput="updatePreview()" /></div>
-      </div>
-      <div class="form-divider"></div>
-
-      <div class="step-label" id="lbl-pass">Step 6 — Passengers</div>
-      <div class="form-group">
-        <label>How many passengers? (max 6)</label>
-        <select id="f-pass" onchange="buildPassengerFields()">
-          <option value="">Select</option>
-          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+    <div class="hr">
+      <div class="cg">
+        <div class="cl">Origin City</div>
+        <select id="srcSel">
+          <option value="0">Delhi</option>
+          <option value="1">Mumbai</option>
+          <option value="2">Kolkata</option>
+          <option value="3">Chennai</option>
+          <option value="4">Bangalore</option>
         </select>
       </div>
-      <div id="passenger-names"></div>
-      <div class="form-divider"></div>
-
-      <div class="step-label" id="lbl-contact">Step 7 — Contact Details</div>
-      <div class="form-row">
-        <div class="form-group half"><label>Your Phone Number</label><input type="tel" id="f-phone" placeholder="9876543210" maxlength="10" oninput="updatePreview()" /></div>
-        <div class="form-group half"><label>Alternate Number <span class="opt-tag">Optional</span></label><input type="tel" id="f-altphone" placeholder="9876543210" maxlength="10" oninput="updatePreview()" /></div>
+      <div class="cg">
+        <div class="cl">Destination</div>
+        <select id="dstSel">
+          <option value="0">Delhi</option>
+          <option value="1">Mumbai</option>
+          <option value="2">Kolkata</option>
+          <option value="3">Chennai</option>
+          <option value="4" selected>Bangalore</option>
+        </select>
       </div>
-      <div class="form-divider"></div>
-
-      <div class="step-label" id="lbl-info">Step 8 — Additional Info <span class="opt-tag">Optional</span></div>
-      <div class="form-group">
-        <textarea id="f-msg" placeholder="E.g. need lower berth, senior citizen, wheelchair, urgent booking..." oninput="updatePreview()"></textarea>
+      <div class="br-row">
+        <button class="bc" id="computeBtn">▶ COMPUTE</button>
+        <button class="bs" id="stepBtn">⏭ STEP</button>
+        <button class="bx" id="resetBtn">↺ RESET</button>
       </div>
-
-      <div class="preview-box" id="preview"></div>
-
-      <button class="whatsapp-btn" onclick="sendToWhatsApp()" id="sendBtn" disabled>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Send Booking Request on WhatsApp
-      </button>
-      <p class="modal-note">Opens WhatsApp with your details pre-filled → sends to <span>+91 98353 22241</span><br>Madan ji will confirm your ticket shortly.</p>
+      <div class="sw">
+        <div class="st"><span>Speed</span><span id="spdLbl">2×</span></div>
+        <input type="range" id="spdSlider" min="1" max="5" value="3" step="1">
+      </div>
     </div>
-  </div>
+  </header>
+
+  <main>
+    <div class="lp">
+      <div class="pc">
+        <div class="pt">Distance Table</div>
+        <table class="dt">
+          <thead><tr><th>City</th><th>Dist</th><th>Via</th></tr></thead>
+          <tbody id="dtbody"></tbody>
+        </table>
+      </div>
+      <div class="pc" style="flex:1;overflow:hidden">
+        <div class="pt">Algorithm Log</div>
+        <div id="stepLog"></div>
+      </div>
+    </div>
+    <div class="gw">
+      <canvas id="gc"></canvas>
+      <div class="pb"><div class="pf" id="pfill"></div></div>
+      <div id="tip"><div class="tc" id="tipCity"></div><div id="tipBody"></div></div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="leg">
+      <div class="li"><div class="ll" style="background:rgba(55,75,100,.85)"></div>Skipped edge</div>
+      <div class="li"><div class="ll" style="background:var(--cy)"></div>Tree edge</div>
+      <div class="li"><div class="ld" style="border-color:var(--a)"></div>Shortest path</div>
+      <div class="li"><div class="lb" style="border-color:var(--a)"></div>Source / Dest</div>
+      <div class="li"><div class="lb" style="border-color:rgba(55,75,100,.85)"></div>City node</div>
+    </div>
+    <span class="sp sr" id="stp">READY</span>
+  </footer>
 </div>
-
-<!-- NAVBAR -->
-<nav>
-  <a href="#home" class="logo"><div class="logo-icon">M</div><div class="logo-text">M <span>Travels</span></div></a>
-  <ul class="nav-links">
-    <li><a href="#services">Services</a></li><li><a href="#routes">Routes</a></li>
-    <li><a href="#about">About</a></li><li><a href="#contact">Contact</a></li>
-  </ul>
-  <button class="nav-cta" onclick="openModal()">Book Now</button>
-</nav>
-
-<!-- HERO -->
-<section id="home">
-  <div class="hero-bg"></div><div class="hero-grid"></div>
-  <div class="hero-content fade-in">
-    <div class="hero-badge">Ranchi's Trusted Travel Partner</div>
-    <h1>Book Trains &amp; Flights<br>Across <span class="gold">All of India</span></h1>
-    <p class="hero-sub">M Travels offers hassle-free train and flight ticket booking from Ranchi. One call, zero stress — we handle your travel so you don't have to.</p>
-    <div class="hero-btns">
-      <button class="btn-primary" onclick="openModal()">🎟️ Book Now</button>
-      <a href="https://wa.me/919835322241" class="btn-outline" target="_blank">💬 WhatsApp Us</a>
-    </div>
-  </div>
-  <div class="hero-stats fade-in">
-    <div class="stat"><div class="stat-num">Pan</div><div class="stat-label">India Routes</div></div>
-    <div class="stat"><div class="stat-num">10+</div><div class="stat-label">Years Experience</div></div>
-    <div class="stat"><div class="stat-num">Train</div><div class="stat-label">&amp; Flight Booking</div></div>
-    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">Customer Support</div></div>
-  </div>
-  <div class="hero-float">
-    <div class="float-card"><div class="float-icon">🚆</div><div class="float-title">Train Booking</div><div class="float-sub">All India Railways</div></div>
-    <div class="float-card"><div class="float-icon">✈️</div><div class="float-title">Flight Booking</div><div class="float-sub">Domestic &amp; International</div></div>
-  </div>
-</section>
-
-<!-- SERVICES -->
-<section id="services">
-  <div class="section-tag">What We Offer</div>
-  <h2 class="section-title">Our <span>Services</span></h2>
-  <div class="divider"></div>
-  <p class="section-sub">We specialize in two things and do them exceptionally well — train and flight ticket booking across all of India.</p>
-  <div class="services-grid">
-    <div class="service-card fade-in">
-      <div class="service-tag">Indian Railways</div><div class="service-icon">🚆</div>
-      <h3>Train Ticket Booking</h3>
-      <p>Book confirmed train tickets across all Indian Railway zones. From sleeper to AC, local to express — we get you a seat.</p>
-      <ul class="service-features"><li>All IRCTC trains covered</li><li>Tatkal &amp; regular booking</li><li>Sleeper, 3AC, 2AC, 1AC</li><li>Group &amp; family bookings</li><li>Waitlist &amp; confirmation support</li></ul>
-    </div>
-    <div class="service-card fade-in">
-      <div class="service-tag">All Airlines</div><div class="service-icon">✈️</div>
-      <h3>Flight Ticket Booking</h3>
-      <p>Domestic and international flight bookings at the best available fares. All major airlines, all routes, minimal fuss.</p>
-      <ul class="service-features"><li>IndiGo, Air India, SpiceJet &amp; more</li><li>Economy &amp; Business class</li><li>Return &amp; one-way tickets</li><li>Multi-city bookings</li><li>Best fare comparison</li></ul>
-    </div>
-    <div class="service-card fade-in">
-      <div class="service-tag">Always Available</div><div class="service-icon">🤝</div>
-      <h3>Personal Assistance</h3>
-      <p>Unlike online portals, we give you a real human who understands your requirements and finds the best option for you.</p>
-      <ul class="service-features"><li>Dedicated travel consultant</li><li>WhatsApp &amp; phone support</li><li>Travel itinerary guidance</li><li>Last-minute bookings handled</li><li>Senior citizen &amp; child fare support</li></ul>
-    </div>
-  </div>
-</section>
-
-<!-- WHY -->
-<section id="why">
-  <div class="section-tag">Why M Travels</div>
-  <h2 class="section-title">Why Choose <span>Us?</span></h2>
-  <div class="divider"></div>
-  <div class="why-grid">
-    <div class="why-card fade-in"><div class="why-num">01</div><div><h4>Local &amp; Trusted</h4><p>A name families across Ranchi and Jharkhand have trusted for years — reliable, honest, and always accessible.</p></div></div>
-    <div class="why-card fade-in"><div class="why-num">02</div><div><h4>Confirmed Tickets</h4><p>We work hard to get you confirmed seats — even on high-demand routes and festival seasons.</p></div></div>
-    <div class="why-card fade-in"><div class="why-num">03</div><div><h4>Best Fares</h4><p>We compare options and find you the most economical fares without compromising on convenience.</p></div></div>
-    <div class="why-card fade-in"><div class="why-num">04</div><div><h4>Zero Hassle</h4><p>No forms, no confusing portals — just tell us your journey and we take care of everything else.</p></div></div>
-    <div class="why-card fade-in"><div class="why-num">05</div><div><h4>Fast Turnaround</h4><p>Tickets confirmed and e-tickets sent to your WhatsApp — sometimes within minutes.</p></div></div>
-    <div class="why-card fade-in"><div class="why-num">06</div><div><h4>Pan India Coverage</h4><p>From Kanyakumari to Kashmir, from Mumbai to Kolkata — we book for any destination in India.</p></div></div>
-  </div>
-</section>
-
-<!-- ROUTES -->
-<section id="routes">
-  <div class="section-tag">Destinations</div>
-  <h2 class="section-title">Popular <span>Routes</span></h2>
-  <div class="divider"></div>
-  <div class="routes-grid">
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Delhi</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Mumbai</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Kolkata</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Bangalore</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Chennai</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Hyderabad</span></div>
-    <div class="route-card"><span>✈️</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Pune</span></div>
-    <div class="route-card"><span>✈️</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Ahmedabad</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Varanasi</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Patna</span></div>
-    <div class="route-card"><span>✈️</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Goa</span></div>
-    <div class="route-card"><span>🚆</span><span class="route-from">Ranchi</span><span class="route-arrow">→</span><span class="route-to">Jaipur</span></div>
-  </div>
-  <p class="routes-note">And <span>many more</span> — we book to every city, every state across India. Just call or WhatsApp us!</p>
-</section>
-
-<!-- ABOUT -->
-<section id="about">
-  <div class="section-tag">About Us</div>
-  <h2 class="section-title">Meet <span>M Travels</span></h2>
-  <div class="divider"></div>
-  <div class="about-wrap">
-    <div class="fade-in">
-      <div class="about-card-main">
-        <div class="owner-avatar">MK</div>
-        <div class="owner-name">Madan Kumar Lal</div>
-        <div class="owner-role">Founder &amp; Owner, M Travels</div>
-        <p class="owner-quote">"Every journey matters. We treat each booking with care because we know how important travel is to our customers and their families."</p>
-        <div class="about-badge-row"><span class="about-badge">Train Expert</span><span class="about-badge">Flight Booking</span><span class="about-badge">Pan India</span></div>
-      </div>
-    </div>
-    <div class="about-content fade-in">
-      <p>M Travels is a trusted travel booking agency based in Ranchi, Jharkhand. Founded by <strong style="color:var(--gold2)">Madan Kumar Lal</strong>, we have been helping families, professionals, and students book train and flight tickets across all of India with ease and reliability.</p>
-      <p>We are well-known in the Ranchi community for reliable, honest service. Our commitment is simple: get you the right ticket at the right price, quickly and without any confusion.</p>
-      <p>Whether you need a last-minute Tatkal booking, a group reservation for a wedding party, or a flight for urgent travel — M Travels has you covered. We handle the complexity so your journey is smooth from the very first step.</p>
-    </div>
-  </div>
-</section>
-
-<!-- TESTIMONIALS -->
-<section id="testimonials">
-  <div class="section-tag">Happy Customers</div>
-  <h2 class="section-title">What People <span>Say</span></h2>
-  <div class="divider"></div>
-  <div class="testi-grid">
-    <div class="testi-card fade-in"><div class="quote-mark">"</div><div class="testi-stars">★★★★★</div><p class="testi-text">Got a confirmed AC ticket during Diwali when IRCTC showed everything waitlisted. Madan ji handled it in no time. Truly amazing service!</p><div class="testi-author"><div class="testi-avatar">RK</div><div><div class="testi-name">Ramesh Kumar</div><div class="testi-city">Ranchi, Jharkhand</div></div></div></div>
-    <div class="testi-card fade-in"><div class="quote-mark">"</div><div class="testi-stars">★★★★★</div><p class="testi-text">Booked flight tickets for my family to Mumbai. Fare was better than online and e-tickets came on WhatsApp within minutes. Very reliable!</p><div class="testi-author"><div class="testi-avatar">PS</div><div><div class="testi-name">Priya Singh</div><div class="testi-city">Ranchi, Jharkhand</div></div></div></div>
-    <div class="testi-card fade-in"><div class="quote-mark">"</div><div class="testi-stars">★★★★★</div><p class="testi-text">I always use M Travels for official tour bookings. They understand urgency and never disappoint. Highly recommended to everyone!</p><div class="testi-author"><div class="testi-avatar">AJ</div><div><div class="testi-name">Amit Jha</div><div class="testi-city">Ranchi, Jharkhand</div></div></div></div>
-  </div>
-</section>
-
-<!-- CTA -->
-<div class="cta-banner fade-in">
-  <h2>Ready to Book Your Next Journey?</h2>
-  <p>Fill the quick form and we'll confirm your ticket on WhatsApp — fast and hassle-free.</p>
-  <div class="cta-row">
-    <button class="btn-primary" onclick="openModal()">🎟️ Book Now</button>
-    <a href="tel:9835322241" class="btn-outline">📞 Call Us</a>
-  </div>
-</div>
-
-<!-- CONTACT -->
-<section id="contact">
-  <div class="section-tag">Get In Touch</div>
-  <h2 class="section-title">Contact <span>Us</span></h2>
-  <div class="divider"></div>
-  <div class="contact-cards fade-in">
-    <a href="tel:9835322241" class="contact-card"><div class="contact-icon">📞</div><div><div class="contact-label">Phone</div><div class="contact-val">+91 98353 22241</div></div></a>
-    <a href="https://wa.me/919835322241" class="contact-card" target="_blank"><div class="contact-icon">💬</div><div><div class="contact-label">WhatsApp</div><div class="contact-val">+91 98353 22241 <small>(Click to chat)</small></div></div></a>
-    <a href="mailto:madan22241@gmail.com" class="contact-card"><div class="contact-icon">✉️</div><div><div class="contact-label">Email</div><div class="contact-val">madan22241@gmail.com</div></div></a>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-logo">M <span>Travels</span></div>
-  <div class="footer-copy">© 2025 M Travels, Ranchi. Train &amp; Flight Booking Specialists.</div>
-  <div class="footer-links"><a href="#services">Services</a><a href="#routes">Routes</a><a href="#contact">Contact</a></div>
-</footer>
 
 <script>
-function openModal(){document.getElementById('bookingModal').classList.add('open');document.body.style.overflow='hidden';}
-function closeModal(){document.getElementById('bookingModal').classList.remove('open');document.body.style.overflow='';}
-document.getElementById('bookingModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+// ── DATA ──────────────────────────────────────────────────────
+const CITIES = ['Delhi','Mumbai','Kolkata','Chennai','Bangalore'];
+const GRAPH = [
+  [0,  10,  0, 30, 100],
+  [10,  0, 50,  0,   0],
+  [ 0, 50,  0, 20,  10],
+  [30,  0, 20,  0,  60],
+  [100, 0, 10, 60,   0]
+];
+const N = 5;
+const INF = Infinity;
 
-let jType='train';
-function setType(t){
-  jType=t;
-  document.getElementById('btnTrain').classList.toggle('active',t==='train');
-  document.getElementById('btnFlight').classList.toggle('active',t==='flight');
-  document.getElementById('train-class').style.display=t==='train'?'block':'none';
-  document.getElementById('flight-class').style.display=t==='flight'?'block':'none';
-  document.getElementById('train-name-block').style.display=t==='train'?'block':'none';
-  const o=t==='flight'?-1:0;
-  document.getElementById('lbl-dates').textContent='Step '+(4+o)+' — Travel Dates';
-  document.getElementById('lbl-pass').textContent='Step '+(5+o)+' — Passengers';
-  document.getElementById('lbl-contact').textContent='Step '+(6+o)+' — Contact Details';
-  document.getElementById('lbl-info').textContent='Step '+(7+o)+' — Additional Info';
-  updatePreview();
+// Logical canvas: 700×450
+const CW = 700, CH = 450;
+
+// Node centers (logical coords)
+const NP = [
+  {x: 318, y:  84},  // Delhi
+  {x: 108, y: 248},  // Mumbai
+  {x: 572, y: 150},  // Kolkata
+  {x: 512, y: 368},  // Chennai
+  {x: 216, y: 372},  // Bangalore
+];
+const NW = 148, NH = 52;
+
+// Pre-compute all edges
+const EDGES = [];
+for (let u = 0; u < N; u++)
+  for (let v = u + 1; v < N; v++)
+    if (GRAPH[u][v]) EDGES.push({u, v, w: GRAPH[u][v]});
+
+function eKey(u, v) { return u < v ? `${u}:${v}` : `${v}:${u}`; }
+
+// ── ALGORITHM ─────────────────────────────────────────────────
+function treeEst(par) {
+  const e = {};
+  for (let i = 0; i < N; i++) if (par[i] !== -1) e[eKey(par[i], i)] = 'tree';
+  return e;
 }
 
-function buildPassengerFields(){
-  const n=parseInt(document.getElementById('f-pass').value)||0;
-  const c=document.getElementById('passenger-names');
-  c.innerHTML='';
-  if(!n){updatePreview();return;}
-  const g=document.createElement('div');g.className='pax-grid';
-  for(let i=1;i<=n;i++){const b=document.createElement('div');b.className='pax-box';b.innerHTML=`<label>Passenger ${i} Name</label><input type="text" id="f-pax-${i}" placeholder="Full name" oninput="updatePreview()" />`;g.appendChild(b);}
-  c.appendChild(g);updatePreview();
+function getPathEdges(par, src, dst) {
+  const s = new Set();
+  let c = dst;
+  while (par[c] !== -1) { s.add(eKey(par[c], c)); c = par[c]; }
+  return s;
 }
 
-function updatePreview(){
-  const from=document.getElementById('f-from').value.trim(),to=document.getElementById('f-to').value.trim();
-  const date=document.getElementById('f-date').value,pass=document.getElementById('f-pass').value,phone=document.getElementById('f-phone').value.trim();
-  document.getElementById('sendBtn').disabled=!(from&&to&&date&&pass&&phone);
-  const box=document.getElementById('preview');
-  if(!from&&!phone){box.classList.remove('show');return;}
-  const fd=date?new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'—';
-  const ret=document.getElementById('f-return').value;
-  const retd=ret?new Date(ret+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'';
-  const altph=document.getElementById('f-altphone').value.trim(),msg=document.getElementById('f-msg').value.trim();
-  let cls='';
-  if(jType==='train'){const c=document.getElementById('f-class').value,tn=document.getElementById('f-trainname').value.trim(),tno=document.getElementById('f-trainno').value.trim();if(c)cls+=`<br><b>Class:</b> ${c}`;if(tn)cls+=`<br><b>Train:</b> ${tn}`;if(tno)cls+=`<br><b>Train No:</b> ${tno}`;}
-  else{const tr=document.getElementById('f-trip').value,cab=document.getElementById('f-cabin').value;if(tr)cls+=`<br><b>Trip:</b> ${tr}`;if(cab)cls+=`<br><b>Cabin:</b> ${cab}`;}
-  let pax='';for(let i=1;i<=(parseInt(pass)||0);i++){const el=document.getElementById(`f-pax-${i}`);if(el&&el.value.trim())pax+=`<br><b>Passenger ${i}:</b> ${el.value.trim()}`;}
-  box.innerHTML=`<b>🧳 Booking Preview</b><br><b>Type:</b> ${jType==='train'?'🚆 Train':'✈️ Flight'}<br><b>Route:</b> ${from||'—'} → ${to||'—'}${cls}<br><b>Travel Date:</b> ${fd}${retd?`<br><b>Return Date:</b> ${retd}`:''}<br><b>Passengers:</b> ${pass||'—'}${pax}<br><b>Phone:</b> ${phone||'—'}${altph?`<br><b>Alt Phone:</b> ${altph}`:''}${msg?`<br><b>Note:</b> ${msg}`:''}`;
-  box.classList.add('show');
+function getPathNodes(par, src, dst) {
+  const s = new Set([dst]);
+  let c = dst;
+  while (par[c] !== -1) { c = par[c]; s.add(c); }
+  return s;
 }
 
-function sendToWhatsApp(){
-  const from=document.getElementById('f-from').value.trim(),to=document.getElementById('f-to').value.trim();
-  const date=document.getElementById('f-date').value,pass=document.getElementById('f-pass').value;
-  const phone=document.getElementById('f-phone').value.trim(),altph=document.getElementById('f-altphone').value.trim();
-  const msg=document.getElementById('f-msg').value.trim(),ret=document.getElementById('f-return').value;
-  const fd=new Date(date+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
-  const retd=ret?new Date(ret+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}):'';
-  let cls='';
-  if(jType==='train'){const c=document.getElementById('f-class').value,tn=document.getElementById('f-trainname').value.trim(),tno=document.getElementById('f-trainno').value.trim();if(c)cls+=`\nClass: ${c}`;if(tn)cls+=`\nTrain Name: ${tn}`;if(tno)cls+=`\nTrain Number: ${tno}`;}
-  else{const tr=document.getElementById('f-trip').value,cab=document.getElementById('f-cabin').value;if(tr)cls+=`\nTrip Type: ${tr}`;if(cab)cls+=`\nCabin Class: ${cab}`;}
-  let pax='';for(let i=1;i<=(parseInt(pass)||0);i++){const el=document.getElementById(`f-pax-${i}`);if(el&&el.value.trim())pax+=`\nPassenger ${i}: ${el.value.trim()}`;}
-  const text=`🧳 *New Booking Request – M Travels*\n\n*Journey Type:* ${jType==='train'?'🚆 Train':'✈️ Flight'}\n*From → To:* ${from} → ${to}${cls}\n*Travel Date:* ${fd}${retd?`\n*Return Date:* ${retd}`:''}\n*No. of Passengers:* ${pass}${pax}\n*Phone:* ${phone}${altph?`\n*Alt Phone:* ${altph}`:''}${msg?`\n*Additional Info:* ${msg}`:''}\n\n_Sent via M Travels website_`;
-  window.open(`https://wa.me/919835322241?text=${encodeURIComponent(text)}`,'_blank');
-  closeModal();
+function buildFrames(src, dst) {
+  const frames = [];
+  const dist = Array(N).fill(INF);
+  const vis  = Array(N).fill(false);
+  const par  = Array(N).fill(-1);
+  dist[src] = 0;
+
+  const mkNst = (cur = -1) => Array.from({length: N}, (_, i) => {
+    if (i === src) return 'src';
+    if (i === dst) return 'dst';
+    if (i === cur) return 'cur';
+    if (vis[i])    return 'vis';
+    return 'unv';
+  });
+
+  frames.push({
+    type:'init', dist:[...dist], vis:[...vis], par:[...par],
+    nst: mkNst(), est: {}, ae: null,
+    msg: `<span class="kw">INIT</span> · src = <span class="nm">${CITIES[src]}</span> · dist[src] = <span class="vl">0</span>`
+  });
+
+  for (let iter = 0; iter < N - 1; iter++) {
+    let u = -1;
+    for (let i = 0; i < N; i++) if (!vis[i] && (u === -1 || dist[i] < dist[u])) u = i;
+    if (u === -1 || dist[u] === INF) break;
+
+    frames.push({
+      type: 'select', dist:[...dist], vis:[...vis], par:[...par],
+      nst: mkNst(u), est: treeEst(par), ae: null,
+      msg: `<span class="kw">SELECT</span> · <span class="nm">${CITIES[u]}</span> · min dist = <span class="vl">${dist[u]}</span>`
+    });
+
+    vis[u] = true;
+
+    for (let v = 0; v < N; v++) {
+      if (!vis[v] && GRAPH[u][v]) {
+        const nd = dist[u] + GRAPH[u][v];
+        const k = eKey(u, v);
+        frames.push({
+          type:'check', dist:[...dist], vis:[...vis], par:[...par],
+          nst: mkNst(u), est: {...treeEst(par), [k]:'check'}, ae: {u, v},
+          msg: `<span class="kw">CHECK</span> · ${CITIES[u]}→${CITIES[v]}: ${dist[u]}+${GRAPH[u][v]}=<span class="vl">${nd}</span>`
+        });
+
+        if (nd < dist[v]) {
+          dist[v] = nd; par[v] = u;
+          frames.push({
+            type:'relax', dist:[...dist], vis:[...vis], par:[...par],
+            nst: mkNst(u), est: treeEst(par), ae: {u, v},
+            msg: `<span class="kw">RELAX</span> · <span class="nm">${CITIES[v]}</span> updated → <span class="vl">${nd}</span> via ${CITIES[u]}`
+          });
+        } else {
+          frames.push({
+            type:'skip', dist:[...dist], vis:[...vis], par:[...par],
+            nst: mkNst(u), est: {...treeEst(par), [k]:'skip'}, ae: {u, v},
+            msg: `<span class="kw">SKIP</span> · ${CITIES[v]} already <span class="vl">${dist[v]}</span> ≤ ${nd}`
+          });
+        }
+      }
+    }
+  }
+
+  // Final frame
+  const pe = getPathEdges(par, src, dst);
+  const pn = getPathNodes(par, src, dst);
+  const finalEst = {};
+  for (let i = 0; i < N; i++) {
+    if (par[i] !== -1) {
+      const k = eKey(par[i], i);
+      finalEst[k] = pe.has(k) ? 'path' : 'tree';
+    }
+  }
+  const nstFinal = Array.from({length: N}, (_, i) => {
+    if (i === src) return 'src';
+    if (pn.has(i)) return 'path';
+    if (vis[i]) return 'vis';
+    return 'unv';
+  });
+
+  frames.push({
+    type:'done', dist:[...dist], vis:[...vis], par:[...par],
+    nst: nstFinal, est: finalEst, ae: null,
+    msg: `<span class="kw">DONE</span> · <span class="nm">${CITIES[src]}</span>→<span class="nm">${CITIES[dst]}</span> = <span class="vl">${dist[dst] === INF ? '∞' : dist[dst]+' km'}</span>`
+  });
+
+  return frames;
 }
 
-const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.12});
-document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
-const today=new Date().toISOString().split('T')[0];
-document.getElementById('f-date').min=today;
-document.getElementById('f-return').min=today;
+// ── CANVAS DRAW ───────────────────────────────────────────────
+const canvas = document.getElementById('gc');
+const ctx    = canvas.getContext('2d');
+canvas.width = CW; canvas.height = CH;
+
+let dashOff = 0;
+let scanY   = 0;
+let pulseT  = 0;
+
+function rr(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function drawBg() {
+  // Subtle dot grid
+  ctx.fillStyle = 'rgba(232,160,32,0.055)';
+  for (let x = 32; x < CW; x += 40)
+    for (let y = 24; y < CH; y += 40) {
+      ctx.beginPath(); ctx.arc(x, y, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+  // Scan line
+  const sy = (scanY % CH);
+  const g = ctx.createLinearGradient(0, sy - 18, 0, sy + 18);
+  g.addColorStop(0, 'rgba(232,160,32,0)');
+  g.addColorStop(0.5, 'rgba(232,160,32,0.04)');
+  g.addColorStop(1, 'rgba(232,160,32,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, sy - 18, CW, 36);
+}
+
+function edgeC(st) {
+  switch (st) {
+    case 'check': return '#e8a020';
+    case 'tree':  return '#28b8d8';
+    case 'path':  return '#e8a020';
+    case 'skip':  return 'rgba(50,68,88,0.55)';
+    default:      return 'rgba(42,58,76,0.65)';
+  }
+}
+
+function drawEdge(u, v, w, st) {
+  const a = NP[u], b = NP[v];
+  const isPath  = st === 'path';
+  const isCheck = st === 'check';
+
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  ctx.strokeStyle = edgeC(st);
+  ctx.lineWidth = isPath ? 2.8 : isCheck ? 2.2 : 1.3;
+  ctx.lineCap = 'round';
+
+  if (isPath) {
+    ctx.setLineDash([11, 6]);
+    ctx.lineDashOffset = -dashOff;
+    ctx.shadowColor = 'rgba(232,160,32,0.7)';
+    ctx.shadowBlur  = 14;
+  } else if (isCheck) {
+    ctx.setLineDash([7, 4]);
+    ctx.shadowColor = 'rgba(232,160,32,0.45)';
+    ctx.shadowBlur  = 9;
+  } else if (st === 'tree') {
+    ctx.shadowColor = 'rgba(40,184,216,0.35)';
+    ctx.shadowBlur  = 6;
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // Weight label pill
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  const ox = -dy / len * 16, oy = dx / len * 16;
+  const lx = mx + ox, ly = my + oy;
+  const txt = `${w} km`;
+
+  ctx.save();
+  ctx.font = '700 9.5px "Space Mono",monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(txt).width;
+  const pw = tw + 16, ph = 15;
+
+  // pill bg
+  ctx.fillStyle = 'rgba(7,10,14,.92)';
+  rr(lx - pw / 2, ly - ph / 2, pw, ph, 3);
+  ctx.fill();
+
+  // pill border (very subtle)
+  ctx.strokeStyle = st === 'none' || st === 'skip' ? 'rgba(40,55,72,.4)' : edgeC(st);
+  ctx.lineWidth = 0.5;
+  rr(lx - pw / 2, ly - ph / 2, pw, ph, 3);
+  ctx.stroke();
+
+  ctx.fillStyle = st === 'none' || st === 'skip' ? 'rgba(65,85,108,0.85)' : edgeC(st);
+  ctx.fillText(txt, lx, ly + 0.5);
+  ctx.restore();
+}
+
+function drawNode(i, st, dist, isSrc, isDst) {
+  const {x, y} = NP[i];
+  const nx = x - NW / 2, ny = y - NH / 2;
+
+  // State colors
+  let bg, stroke, lw, glowC = null;
+  switch (st) {
+    case 'src':  bg='#160e00'; stroke='#e8a020'; lw=2;   glowC='rgba(232,160,32,.55)'; break;
+    case 'dst':  bg='#061520'; stroke='#28d870'; lw=2;   glowC='rgba(40,216,112,.45)'; break;
+    case 'cur':  bg='#130c00'; stroke='#e8a020'; lw=2;   glowC='rgba(232,160,32,.45)'; break;
+    case 'vis':  bg='#051420'; stroke='#1a6888'; lw=1.5; break;
+    case 'path': bg='#071500'; stroke='#28d870'; lw=2;   glowC='rgba(40,216,112,.55)'; break;
+    default:     bg='#0d1520'; stroke='#263848'; lw=1.2;
+  }
+
+  ctx.save();
+  if (glowC) { ctx.shadowColor = glowC; ctx.shadowBlur = 22; }
+  rr(nx, ny, NW, NH, 5);
+  ctx.fillStyle = bg; ctx.fill();
+  ctx.strokeStyle = stroke; ctx.lineWidth = lw;
+  ctx.stroke();
+  ctx.restore();
+
+  // Pulse ring on src/dst/cur
+  if (glowC) {
+    const pulse = (Math.sin(pulseT * 2 + i) + 1) / 2;
+    ctx.save();
+    ctx.beginPath();
+    rr(nx - 5 - pulse * 4, ny - 5 - pulse * 4, NW + 10 + pulse * 8, NH + 10 + pulse * 8, 8);
+    ctx.strokeStyle = glowC;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.4 * (1 - pulse * 0.7);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // City name
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 13.5px "Rajdhani",sans-serif';
+  ctx.fillStyle = st === 'unv' ? '#445568' : '#e0d8c0';
+  ctx.fillText(CITIES[i].toUpperCase(), x, y - 9);
+
+  // Sub label (distance + tag)
+  let sub;
+  const dv = dist === INF ? '∞' : dist;
+  if (isSrc)                    sub = `SOURCE · 0 KM`;
+  else if (isDst && dist < INF) sub = `${dv} KM · END`;
+  else if (isDst)               sub = `? KM · END`;
+  else                          sub = dist === INF ? '—' : `${dv} KM`;
+
+  ctx.font = '700 9px "Space Mono",monospace';
+  const subC = { src:'#e8a020', dst:'#28d870', cur:'#e8c060',
+    vis:'#28b8d8', path:'#28d870', unv:'#3a4c5e' };
+  ctx.fillStyle = subC[st] || '#3a4c5e';
+  ctx.fillText(sub, x, y + 10);
+  ctx.restore();
+}
+
+function drawFrame(f) {
+  ctx.clearRect(0, 0, CW, CH);
+  drawBg();
+
+  // Edges (drawn before nodes so nodes sit on top)
+  EDGES.forEach(({u, v, w}) => {
+    drawEdge(u, v, w, f.est[eKey(u, v)] || 'none');
+  });
+
+  // Nodes
+  const srcV = parseInt(document.getElementById('srcSel').value);
+  const dstV = parseInt(document.getElementById('dstSel').value);
+  for (let i = 0; i < N; i++) drawNode(i, f.nst[i], f.dist[i], i === srcV, i === dstV);
+}
+
+// ── UI ────────────────────────────────────────────────────────
+function updateTable(f) {
+  const srcV = parseInt(document.getElementById('srcSel').value);
+  const dstV = parseInt(document.getElementById('dstSel').value);
+  document.getElementById('dtbody').innerHTML = CITIES.map((c, i) => {
+    const d = f.dist[i];
+    const via = f.par[i] >= 0 ? CITIES[f.par[i]] : (i === srcV ? '—' : '?');
+    const ns = f.nst[i];
+    let cls = 'ru';
+    if (ns === 'src')  cls = 'rs';
+    else if (ns === 'cur')  cls = 'rc';
+    else if (ns === 'path') cls = 'rp';
+    else if (i === dstV && f.type === 'done') cls = 'rd2';
+    else if (ns === 'vis')  cls = 'rv';
+    const dStr = d === INF ? '∞' : d;
+    return `<tr class="${cls}">
+      <td><span class="cd"></span>${c}</td>
+      <td class="dtd">${dStr}${d !== INF && d !== 0 ? '' : ''}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:9.5px;color:var(--tx2)">${via}</td>
+    </tr>`;
+  }).join('');
+}
+
+let logLines = [];
+function updateLog(f) {
+  logLines.push(f.msg);
+  if (logLines.length > 6) logLines.shift();
+  document.getElementById('stepLog').innerHTML =
+    logLines.map((l, i, a) => `<span class="sl${i === a.length - 1 ? ' act' : ''}">${l}</span>`).join('');
+}
+
+function setStatus(s) {
+  const p = document.getElementById('stp');
+  p.className = 'sp';
+  if (s === 'run')       { p.classList.add('sn'); p.textContent = 'COMPUTING'; }
+  else if (s === 'done') { p.classList.add('sd'); p.textContent = 'COMPLETE'; }
+  else                   { p.classList.add('sr'); p.textContent = 'READY'; }
+}
+
+// Tooltip
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = CW / rect.width, sy = CH / rect.height;
+  const mx = (e.clientX - rect.left) * sx;
+  const my = (e.clientY - rect.top) * sy;
+  const tip = document.getElementById('tip');
+  let hit = -1;
+  for (let i = 0; i < N; i++) {
+    const {x, y} = NP[i];
+    if (mx >= x - NW/2 && mx <= x + NW/2 && my >= y - NH/2 && my <= y + NH/2) { hit = i; break; }
+  }
+  if (hit >= 0 && frames[fIdx]) {
+    const f = frames[fIdx];
+    const d = f.dist[hit];
+    const p = f.par[hit];
+    const edges = EDGES.filter(e => e.u === hit || e.v === hit);
+    document.getElementById('tipCity').textContent = CITIES[hit];
+    document.getElementById('tipBody').innerHTML =
+      `Distance: ${d === INF ? '∞' : d + ' km'}<br>` +
+      `Via: ${p >= 0 ? CITIES[p] : '—'}<br>` +
+      `Connections: ${edges.map(e => e.u === hit ? CITIES[e.v] : CITIES[e.u]).join(', ')}`;
+    const tx = (NP[hit].x + NW/2 + 8) / CW * rect.width;
+    const ty = (NP[hit].y - NH/2) / CH * rect.height;
+    tip.style.left = (rect.left + tx - canvas.getBoundingClientRect().left + 8) + 'px';
+    tip.style.top = ty + 'px';
+    tip.style.display = 'block';
+  } else {
+    document.getElementById('tip').style.display = 'none';
+  }
+});
+canvas.addEventListener('mouseleave', () => {
+  document.getElementById('tip').style.display = 'none';
+});
+
+// ── STATE MACHINE ─────────────────────────────────────────────
+let frames = [], fIdx = 0, playing = false, timer = null;
+
+function getDelay() {
+  return [1100, 680, 400, 220, 100][parseInt(document.getElementById('spdSlider').value) - 1];
+}
+
+function init() {
+  const src = parseInt(document.getElementById('srcSel').value);
+  const dst = parseInt(document.getElementById('dstSel').value);
+  frames = buildFrames(src, dst);
+  fIdx = 0; logLines = [];
+  document.getElementById('pfill').style.width = '0%';
+  setStatus('rdy');
+  updateTable(frames[0]);
+  updateLog(frames[0]);
+}
+
+function renderIdx(i) {
+  const f = frames[i]; if (!f) return;
+  updateTable(f);
+  updateLog(f);
+  document.getElementById('pfill').style.width =
+    Math.round(i / (frames.length - 1) * 100) + '%';
+  if (f.type === 'done') setStatus('done');
+}
+
+function stepFwd() {
+  if (fIdx < frames.length - 1) { fIdx++; renderIdx(fIdx); }
+}
+
+function startPlay() {
+  if (fIdx >= frames.length - 1) { init(); setTimeout(startPlay, 80); return; }
+  playing = true; setStatus('run');
+  document.getElementById('computeBtn').textContent = '⏸ PAUSE';
+  timer = setInterval(() => { stepFwd(); if (fIdx >= frames.length - 1) stopPlay(); }, getDelay());
+}
+
+function stopPlay() {
+  playing = false; clearInterval(timer); timer = null;
+  document.getElementById('computeBtn').textContent = '▶ COMPUTE';
+  if (frames[fIdx] && frames[fIdx].type !== 'done') setStatus('rdy');
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────
+function loop() {
+  dashOff = (dashOff + 0.45) % 34;
+  scanY   = (scanY + 0.55) % CH;
+  pulseT += 0.03;
+  if (frames[fIdx]) drawFrame(frames[fIdx]);
+  requestAnimationFrame(loop);
+}
+
+// ── EVENTS ────────────────────────────────────────────────────
+document.getElementById('computeBtn').addEventListener('click', () => playing ? stopPlay() : startPlay());
+document.getElementById('stepBtn').addEventListener('click', () => { stopPlay(); stepFwd(); });
+document.getElementById('resetBtn').addEventListener('click', () => { stopPlay(); init(); });
+document.getElementById('srcSel').addEventListener('change', () => { stopPlay(); init(); });
+document.getElementById('dstSel').addEventListener('change', () => { stopPlay(); init(); });
+document.getElementById('spdSlider').addEventListener('input', function () {
+  document.getElementById('spdLbl').textContent = ['0.5×','1×','2×','3×','5×'][this.value - 1];
+  if (playing) { stopPlay(); startPlay(); }
+});
+
+// ── BOOT ─────────────────────────────────────────────────────
+init();
+loop();
 </script>
 </body>
 </html>
