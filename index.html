@@ -230,11 +230,11 @@ const CW = 700, CH = 450;
 
 // Node centers (logical coords)
 const NP = [
-  {x: 318, y:  84},  // Delhi
-  {x: 108, y: 248},  // Mumbai
-  {x: 572, y: 150},  // Kolkata
-  {x: 512, y: 368},  // Chennai
-  {x: 216, y: 372},  // Bangalore
+  {x: 350, y:  75},  // Delhi      — top centre
+  {x:  95, y: 230},  // Mumbai     — left
+  {x: 590, y: 130},  // Kolkata    — right upper
+  {x: 530, y: 370},  // Chennai    — right lower
+  {x: 175, y: 370},  // Bangalore  — left lower
 ];
 const NW = 148, NH = 52;
 
@@ -415,15 +415,8 @@ function drawEdge(u, v, w, st) {
   if (isPath) {
     ctx.setLineDash([11, 6]);
     ctx.lineDashOffset = -dashOff;
-    ctx.shadowColor = 'rgba(232,160,32,0.7)';
-    ctx.shadowBlur  = 14;
   } else if (isCheck) {
     ctx.setLineDash([7, 4]);
-    ctx.shadowColor = 'rgba(232,160,32,0.45)';
-    ctx.shadowBlur  = 9;
-  } else if (st === 'tree') {
-    ctx.shadowColor = 'rgba(40,184,216,0.35)';
-    ctx.shadowBlur  = 6;
   }
   ctx.stroke();
   ctx.restore();
@@ -473,7 +466,6 @@ function drawNode(i, st, dist, isSrc, isDst) {
   }
 
   ctx.save();
-  if (glowC) { ctx.shadowColor = glowC; ctx.shadowBlur = 22; }
   rr(nx, ny, NW, NH, 5);
   ctx.fillStyle = bg; ctx.fill();
   ctx.strokeStyle = stroke; ctx.lineWidth = lw;
